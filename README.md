@@ -116,7 +116,7 @@ Organización / Comunidad: Catan Universe Chile
 Agradecimientos Especiales a:
 
 Odette Garrido
-Loreto Gacitua
-La Secata
+
+Loreto Gacitua y La Secata
 
 © 2025 Sistema APP Manager Chile. Todos los derechos reservados. Licencia de uso gratuito sujeta a la atribución del autor original.
