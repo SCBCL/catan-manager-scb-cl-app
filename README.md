@@ -1,6 +1,6 @@
 🏆 App Catan Manager
 
-¡Bienvenido al gestor oficial para torneos de Catan! 🎲
+¡Bienvenido al gestor para torneos de Catan! 🎲
 
 Esta aplicación es una herramienta diseñada para organizar, gestionar y llevar el control de torneos de Catan de forma automática, permitiendo manejar desde inscripciones hasta el cálculo de puntos y la gestión de fases finales (semifinales y gran final).
 
