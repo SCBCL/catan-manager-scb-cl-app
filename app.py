@@ -2220,7 +2220,6 @@ elif menu == "Fases Finales":
         </body>
         </html>
         """
-        iframe_height_final = 350 + (500 if mapa_img_f else 0)
         components.html(html_fixture_final, height=iframe_height_final, scrolling=True)
 
         if tm.final_results:
@@ -2612,3 +2611,28 @@ elif menu == "Generador de Mapas":
     st.header("🗺️ Generador de Mapas de Catan")
     st.markdown("Genera un tablero balanceado o aleatorio directamente aquí. (Requiere conexión a internet)")
     components.iframe("https://catan.bunge.io/", height=750, scrolling=True)
+
+
+# ==============================================================================
+# 6. BOOTSTRAP DE EJECUCIÓN NATIVA (EXE / STANDALONE)
+# Responsabilidad: Interceptar la ejecución directa y aislar el servidor Streamlit en un subproceso para evitar conflictos de Runtime.
+# ==============================================================================
+if __name__ == "__main__":
+    import sys
+    import os
+    import subprocess
+
+    # Verifica si el script se ejecutó con doble clic (sin el comando 'streamlit run')
+    nombre_proceso = os.path.basename(sys.argv[0]).lower()
+    if "streamlit" not in nombre_proceso:
+        print("🚀 Iniciando servidor de Catan Manager...")
+        try:
+            # Lanzar de forma aislada
+            comando = [sys.executable, "-m", "streamlit", "run", os.path.abspath(__file__), "--global.developmentMode=false"]
+            subprocess.check_call(comando)
+        except KeyboardInterrupt:
+            pass
+        except Exception as e:
+            print(f"❌ Error crítico al levantar el servidor: {e}")
+            input("Presiona Enter para salir...") # Evita que la ventana se cierre de golpe si hay error
+        sys.exit(0)
