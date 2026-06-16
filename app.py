@@ -1,45 +1,51 @@
-# ==============================================================================
-# 0. BOOTSTRAP: AUTO-INSTALADOR DE DEPENDENCIAS
-# Responsabilidad: Instalar librerías externas automáticamente en el entorno local antes de la ejecución principal.
-# ==============================================================================
+# 0. BOOTSTRAP: Verifica, instala y actualiza dependencias del sistema operativo y entorno de ejecución.
 import sys
 import subprocess
 import os
+import importlib
+from typing import Dict, List
 
 def _verificar_e_instalar_dependencias() -> None:
-    """Verifica la existencia de dependencias clave e invoca a pip si es necesario."""
-    # Diccionario de dependencias: { 'nombre_modulo_interno': 'nombre_paquete_pip' }
-    dependencias = {
+    """Verifica dependencias clave y actualiza paquetes usando pip en la inicialización."""
+    # Control de estado de ejecución para evitar bloqueo en cada re-renderizado de Streamlit
+    if os.environ.get("CATAN_BOOTSTRAP_DONE") == "1":
+        return
+
+    dependencias: Dict[str, str] = {
         "streamlit": "streamlit",
         "pandas": "pandas",
         "PIL": "Pillow",
         "numpy": "numpy",
-        "cv2": "opencv-python",
+        "cv2": "opencv-python-headless",
         "openpyxl": "openpyxl",
         "xlsxwriter": "xlsxwriter"
     }
 
-    faltantes = []
-    for modulo, paquete in dependencias.items():
-        try:
-            __import__(modulo)
-        except ImportError:
-            faltantes.append(paquete)
+    paquetes_a_actualizar: List[str] = list(dependencias.values())
+    print("⏳ Sincronizando y actualizando dependencias del entorno...")
 
-    if faltantes:
-        print(f"⏳ Entorno incompleto detectado. Instalando: {', '.join(faltantes)}")
-        try:
-            # Ejecuta pip install usando el ejecutable actual de Python
-            subprocess.check_call([sys.executable, "-m", "pip", "install", *faltantes])
-            print("✅ Instalación completada. Reiniciando proceso...")
-            # Reinicia el script actual para recargar los módulos recién instalados en memoria
-            os.execv(sys.executable, [sys.executable] + sys.argv)
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Error crítico en auto-setup al invocar pip: {e}")
-            sys.exit(1)
-        except Exception as e:
-            print(f"❌ Excepción general en auto-setup: {e}")
-            sys.exit(1)
+    try:
+        # La bandera --upgrade garantiza la instalación de faltantes y actualización de existentes
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "--quiet", *paquetes_a_actualizar]
+        )
+        importlib.invalidate_caches()
+        
+        for modulo in dependencias.keys():
+            __import__(modulo)
+            
+        os.environ["CATAN_BOOTSTRAP_DONE"] = "1"
+        print("✅ Dependencias actualizadas y cargadas correctamente.")
+        
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Error crítico de subproceso al invocar pip: {str(e)}")
+        sys.exit(1)
+    except ImportError as e:
+        print(f"❌ Error de importación post-instalación: {str(e)}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Excepción no controlada en la fase de bootstrap: {str(e)}")
+        sys.exit(1)
 
 
 _verificar_e_instalar_dependencias()
