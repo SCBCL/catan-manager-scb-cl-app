@@ -2615,29 +2615,33 @@ elif menu == "Generador de Mapas":
 
 # ==============================================================================
 # 6. BOOTSTRAP DE EJECUCIÓN NATIVA (EXE / STANDALONE)
-# Responsabilidad: Interceptar la ejecución directa y aislar el servidor Streamlit en un subproceso con candado de entorno (Environment Lock) para prevenir bucles infinitos (Fork Bombs).
+# Responsabilidad: Interceptar la ejecución directa delegando el control al núcleo de Streamlit, previniendo recursión y colisiones de Runtime.
 # ==============================================================================
 if __name__ == "__main__":
     import sys
     import os
-    import subprocess
 
-    # Candado estricto mediante variable de entorno para evitar ejecución recursiva
-    if os.environ.get("APP_MANAGER_STREAMLIT_ACTIVE") != "1":
-        print("🚀 Iniciando servidor de Catan Manager...")
+    try:
+        from streamlit.web import cli as stcli
+        from streamlit import runtime
         
-        # Clonar el entorno actual e inyectar la llave de bloqueo
-        entorno_actual: dict[str, str] = os.environ.copy()
-        entorno_actual["APP_MANAGER_STREAMLIT_ACTIVE"] = "1"
-        
-        try:
-            # Lanzar el proceso de Streamlit pasándole el entorno modificado
-            comando: list[str] = [sys.executable, "-m", "streamlit", "run", os.path.abspath(__file__), "--global.developmentMode=false"]
-            subprocess.check_call(comando, env=entorno_actual)
-        except KeyboardInterrupt:
-            pass # Cierre limpio si el usuario presiona Ctrl+C en la consola
-        except Exception as e:
-            print(f"❌ Error crítico al levantar el servidor: {str(e)}")
-            input("Presiona Enter para salir...") # Evita que la ventana de CMD se cierre de golpe
-        finally:
-            sys.exit(0)
+        # Verificación estricta del motor de Streamlit:
+        # Si el Runtime NO existe, el script fue ejecutado crudo (doble clic). Lo iniciamos.
+        # Si el Runtime SÍ existe, Streamlit ya está controlando el flujo. Lo ignoramos para evitar bucles.
+        if not runtime.exists():
+            print("🚀 Iniciando servidor embebido de Catan Manager...")
+            # Sobrescribimos sys.argv para emular el comando nativo de terminal
+            sys.argv = ["streamlit", "run", os.path.abspath(__file__), "--global.developmentMode=false"]
+            sys.exit(stcli.main())
+            
+    except ImportError as e:
+        print(f"❌ Error de Dependencia Core: {str(e)}")
+        input("Presiona Enter para salir...")
+        sys.exit(1)
+    except SystemExit as e:
+        # Cierre limpio del servidor interceptado para evitar trazas rojas en consola
+        sys.exit(e.code)
+    except Exception as e:
+        print(f"❌ Error crítico de inicialización: {str(e)}")
+        input("Presiona Enter para salir...")
+        sys.exit(1)
