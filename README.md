@@ -2,6 +2,8 @@
 
 Un avanzado sistema de gestión y automatización de torneos de Catan, diseñado con una interfaz gráfica en Streamlit. Esta herramienta abarca desde la inscripción de jugadores hasta la coronación del campeón, integrando emparejamientos inteligentes, cálculo automático de rendimientos, fases finales con ventaja deportiva y un sistema de apuestas dinámico. De Chile para el mundo.
 
+Contacto: simon.carvajal24@gmail.com
+
 ---
 
 ## 🚀 Características Principales
