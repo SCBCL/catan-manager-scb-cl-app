@@ -2615,24 +2615,29 @@ elif menu == "Generador de Mapas":
 
 # ==============================================================================
 # 6. BOOTSTRAP DE EJECUCIÓN NATIVA (EXE / STANDALONE)
-# Responsabilidad: Interceptar la ejecución directa y aislar el servidor Streamlit en un subproceso para evitar conflictos de Runtime.
+# Responsabilidad: Interceptar la ejecución directa y aislar el servidor Streamlit en un subproceso con candado de entorno (Environment Lock) para prevenir bucles infinitos (Fork Bombs).
 # ==============================================================================
 if __name__ == "__main__":
     import sys
     import os
     import subprocess
 
-    # Verifica si el script se ejecutó con doble clic (sin el comando 'streamlit run')
-    nombre_proceso = os.path.basename(sys.argv[0]).lower()
-    if "streamlit" not in nombre_proceso:
+    # Candado estricto mediante variable de entorno para evitar ejecución recursiva
+    if os.environ.get("APP_MANAGER_STREAMLIT_ACTIVE") != "1":
         print("🚀 Iniciando servidor de Catan Manager...")
+        
+        # Clonar el entorno actual e inyectar la llave de bloqueo
+        entorno_actual: dict[str, str] = os.environ.copy()
+        entorno_actual["APP_MANAGER_STREAMLIT_ACTIVE"] = "1"
+        
         try:
-            # Lanzar de forma aislada
-            comando = [sys.executable, "-m", "streamlit", "run", os.path.abspath(__file__), "--global.developmentMode=false"]
-            subprocess.check_call(comando)
+            # Lanzar el proceso de Streamlit pasándole el entorno modificado
+            comando: list[str] = [sys.executable, "-m", "streamlit", "run", os.path.abspath(__file__), "--global.developmentMode=false"]
+            subprocess.check_call(comando, env=entorno_actual)
         except KeyboardInterrupt:
-            pass
+            pass # Cierre limpio si el usuario presiona Ctrl+C en la consola
         except Exception as e:
-            print(f"❌ Error crítico al levantar el servidor: {e}")
-            input("Presiona Enter para salir...") # Evita que la ventana se cierre de golpe si hay error
-        sys.exit(0)
+            print(f"❌ Error crítico al levantar el servidor: {str(e)}")
+            input("Presiona Enter para salir...") # Evita que la ventana de CMD se cierre de golpe
+        finally:
+            sys.exit(0)
