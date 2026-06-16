@@ -6,6 +6,26 @@ import sys
 import subprocess
 import os
 
+# ==============================================================================
+# 0.1 BOOTSTRAP DE EJECUCIÓN NATIVA (REUBICADO)
+# Responsabilidad: Interceptar la ejecución directa ANTES de cargar Streamlit para evitar residuos gráficos y errores de sesión.
+# ==============================================================================
+nombre_proceso = os.path.basename(sys.argv[0]).lower()
+if "streamlit" not in nombre_proceso:
+    print("🚀 Iniciando servidor embebido de Streamlit para entorno standalone/EXE...")
+    try:
+        from streamlit.web import cli as stcli
+        sys.argv = ["streamlit", "run", os.path.abspath(__file__), "--global.developmentMode=false"]
+        sys.exit(stcli.main())
+    except ImportError as e:
+        print(f"❌ Error de Dependencia: {e}")
+        sys.exit(1)
+    except SystemExit as e:
+        print(f"🛑 Servidor finalizado con código: {e.code}")
+        sys.exit(e.code)
+    except Exception as e:
+        print(f"❌ Error crítico: {e}")
+        sys.exit(1)
 
 def _verificar_e_instalar_dependencias() -> None:
     """Verifica la existencia de dependencias clave e invoca a pip si es necesario."""
@@ -81,14 +101,17 @@ for logger_name in logging.root.manager.loggerDict:
 sys.setrecursionlimit(3000)
 
 # 1.3 Configuración de Rutas y Carpetas
-CARPETA_TORNEOS = os.path.join(os.getcwd(), "Catan_Torneos")
+# Responsabilidad: Construir un directorio de persistencia local dinámico encriptando la ruta absoluta del script para evadir WinError 5.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CARPETA_TORNEOS = os.path.join(BASE_DIR, "Catan_Torneos")
 if not os.path.exists(CARPETA_TORNEOS):
     try:
         os.makedirs(CARPETA_TORNEOS)
         print(f"✅ Carpeta de persistencia creada en: {CARPETA_TORNEOS}")
     except Exception as e:
-        print(f"⚠️ Alerta I/O: Fallo al crear directorio local. Causa: {str(e)}. Fallback al directorio raíz.")
-        CARPETA_TORNEOS = "."
+        print(f"⚠️ Alerta I/O: Fallo local. Causa: {str(e)}. Fallback a Documentos de usuario.")
+        CARPETA_TORNEOS = os.path.join(os.path.expanduser("~"), "Documents", "Catan_Torneos")
+        os.makedirs(CARPETA_TORNEOS, exist_ok=True)
 
 # 1.4 Constantes Globales
 CONSTANTS = {
@@ -2610,34 +2633,3 @@ elif menu == "Generador de Mapas":
     st.header("🗺️ Generador de Mapas de Catan")
     st.markdown("Genera un tablero balanceado o aleatorio directamente aquí. (Requiere conexión a internet)")
     components.iframe("https://catan.bunge.io/", height=750, scrolling=True)
-
-
-# [INICIO SECCIÓN NUEVA]
-# ==============================================================================
-# 6. BOOTSTRAP DE EJECUCIÓN NATIVA (EXE / STANDALONE)
-# Responsabilidad: Interceptar la ejecución directa del script (ej. vía app.exe) e inyectar el contexto del servidor web de Streamlit programáticamente.
-# ==============================================================================
-if __name__ == "__main__":
-    import sys
-
-    # Verifica si el script se está ejecutando crudo (sin el CLI de streamlit)
-    # Se utiliza os.path.basename para asegurar compatibilidad multiplataforma (Windows/Unix)
-    nombre_proceso = os.path.basename(sys.argv[0]).lower()
-
-    if "streamlit" not in nombre_proceso:
-        print("🚀 Iniciando servidor embebido de Streamlit para entorno standalone/EXE...")
-        try:
-            from streamlit.web import cli as stcli
-            # Sobrescribe los argumentos del sistema para emular 'streamlit run app.py'
-            sys.argv = ["streamlit", "run", os.path.abspath(__file__), "--global.developmentMode=false"]
-            sys.exit(stcli.main())
-        except ImportError as e:
-            print(f"❌ Error de Dependencia: No se encontró la librería principal. Detalle: {e}")
-            sys.exit(1)
-        except SystemExit as e:
-            # stcli.main() invoca SystemExit de forma natural al cerrarse; lo capturamos para evitar crashes ruidosos.
-            print(f"🛑 Servidor finalizado con código: {e.code}")
-            sys.exit(e.code)
-        except Exception as e:
-            print(f"❌ Error crítico de capa de red al levantar el servidor interno: {e}")
-            sys.exit(1)
