@@ -6,27 +6,6 @@ import sys
 import subprocess
 import os
 
-# ==============================================================================
-# 0.1 BOOTSTRAP DE EJECUCIÓN NATIVA (REUBICADO)
-# Responsabilidad: Interceptar la ejecución directa ANTES de cargar Streamlit para evitar residuos gráficos y errores de sesión.
-# ==============================================================================
-nombre_proceso = os.path.basename(sys.argv[0]).lower()
-if "streamlit" not in nombre_proceso:
-    print("🚀 Iniciando servidor embebido de Streamlit para entorno standalone/EXE...")
-    try:
-        from streamlit.web import cli as stcli
-        sys.argv = ["streamlit", "run", os.path.abspath(__file__), "--global.developmentMode=false"]
-        sys.exit(stcli.main())
-    except ImportError as e:
-        print(f"❌ Error de Dependencia: {e}")
-        sys.exit(1)
-    except SystemExit as e:
-        print(f"🛑 Servidor finalizado con código: {e.code}")
-        sys.exit(e.code)
-    except Exception as e:
-        print(f"❌ Error crítico: {e}")
-        sys.exit(1)
-
 def _verificar_e_instalar_dependencias() -> None:
     """Verifica la existencia de dependencias clave e invoca a pip si es necesario."""
     # Diccionario de dependencias: { 'nombre_modulo_interno': 'nombre_paquete_pip' }
