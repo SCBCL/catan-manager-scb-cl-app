@@ -1226,14 +1226,32 @@ with st.sidebar:
     )
     st.divider()
 
+    # ==============================================================================
+    # 4.1 COMPONENTE: CARGAR TORNEO
+    # Responsabilidad: Interfaz de carga de torneos históricos desde el almacenamiento local.
+    # ==============================================================================
     st.markdown("### 📂 Cargar Torneo")
     try:
-        archivos_drive = [f for f in os.listdir(CARPETA_TORNEOS) if f.endswith(".json")]
-        archivos_drive.sort(reverse=True)
-    except Exception:
-        archivos_drive = []
+        archivos_locales: list[str] = [f for f in os.listdir(CARPETA_TORNEOS) if f.endswith(".json")]
+        archivos_locales.sort(reverse=True)
+    except Exception as e:
+        archivos_locales = []
+        st.error(f"Error al leer directorio: {str(e)}")
+
+    if archivos_locales:
+        archivo_sel: str = st.selectbox("Seleccionar respaldo:", archivos_locales)
+        if st.button("📥 Cargar Seleccionado", use_container_width=True):
+            ruta_completa: str = os.path.join(CARPETA_TORNEOS, archivo_sel)
+            ok, msg = tm.load_state(ruta_completa)
+            if ok:
+                st.session_state.manager = tm
+                st.success(msg)
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error(msg)
     else:
-        st.caption("No se encontraron archivos en Drive.")
+        st.caption("No se encontraron archivos en la carpeta local.")
 
     st.divider()
     c1, c2 = st.columns(2)
@@ -1272,7 +1290,6 @@ with st.sidebar:
     <i>Santiago, Chile 2025. Todos los derechos reservados.</i>
     </div>
     """, unsafe_allow_html=True)
-
 # ==============================================================================
 # 5. PÁGINAS DEL MENÚ
 # Explicación: Cada opción del menú lateral renderiza una interfaz específica y acopla sus lógicas.
