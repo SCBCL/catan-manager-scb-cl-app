@@ -2220,6 +2220,7 @@ elif menu == "Fases Finales":
         </body>
         </html>
         """
+        iframe_height_final: int = 350 + (500 if mapa_img_f else 0)
         components.html(html_fixture_final, height=iframe_height_final, scrolling=True)
 
         if tm.final_results:
@@ -2611,7 +2612,6 @@ elif menu == "Generador de Mapas":
     st.header("🗺️ Generador de Mapas de Catan")
     st.markdown("Genera un tablero balanceado o aleatorio directamente aquí. (Requiere conexión a internet)")
     components.iframe("https://catan.bunge.io/", height=750, scrolling=True)
-
 
 # ==============================================================================
 # 6. BOOTSTRAP DE EJECUCIÓN NATIVA (EXE / STANDALONE)
